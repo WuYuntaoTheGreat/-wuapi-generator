@@ -32,7 +32,7 @@
   "dependencies": {
     "@types/dedent": "^0.7.0",
     "@types/lodash": "^4.14.191",
-    "@wuapi/essential": "^1.0.1",
+    "@wuapi/essential": "^1.0.2",
     "dedent": "^0.7.0",
     "lodash": "^4.17.21"
   }
