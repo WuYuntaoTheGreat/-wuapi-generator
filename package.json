@@ -22,6 +22,9 @@
     "url": "https://github.com/WuYuntaoTheGreat/wuapi-generator/issues"
   },
   "homepage": "https://github.com/WuYuntaoTheGreat/wuapi-generator#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/node": "^18.14.0",
     "typescript": "^4.9.5"
