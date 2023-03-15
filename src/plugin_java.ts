@@ -19,11 +19,12 @@ export default class JavaPlugin extends BasePlugin {
       name: "java",
       abbreviation: "j",
       version: "1.0.0",
-      description: "Generate Java code."
+      description: "Generate Java code.",
+      arguments: [],
     }
   }
 
-  process(project: $Project, outputDir: string): void {
+  process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
     new JavaProcessor(this, project, outputDir).process()
   }
 }

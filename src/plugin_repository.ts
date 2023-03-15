@@ -16,11 +16,12 @@ export default class RepositoryPlugin extends BasePlugin {
       name: "repository",
       abbreviation: "r",
       version: "1.0.0",
-      description: "Generate a Json repository."
+      description: "Generate a Json repository.",
+      arguments: [],
     }
   }
 
-  process(project: $Project, outputDir: string): void {
+  process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
     new RepositoryProcessor(this, project, outputDir).process()
   }
 

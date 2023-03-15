@@ -19,11 +19,12 @@ export default class SwiftPlugin extends BasePlugin {
       name: "swift",
       abbreviation: "s",
       version: "1.0.0",
-      description: "Generate Swift code."
+      description: "Generate Swift code.",
+      arguments: [],
     }
   }
 
-  process(project: $Project, outputDir: string): void {
+  process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
     new SwiftProcessor(this, project, outputDir).process()
   }
 }

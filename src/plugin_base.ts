@@ -2,11 +2,18 @@ import { $Commentable, $Project } from "@wuapi/essential";
 import _, { replace } from 'lodash';
 import path from 'path';
 
+export type PluginArgument = {
+  tag: string,
+  withValue: boolean,
+  description: string,
+}
+
 export type PluginDescription = {
   name: string,
   version: string,
   abbreviation: string,
   description: string,
+  arguments: PluginArgument[],
 }
 
 /**
@@ -32,8 +39,9 @@ export abstract class BasePlugin {
    * Start process the project, and generate code.
    * @param project The project to process.
    * @param outputDir The output dir, NOTE! this is the root to all plugins, each plugin will create it's 
+   * @param args The arguments from command line.
    */
-  abstract process(project: $Project, outputDir: string): void
+  abstract process(project: $Project, outputDir: string, args: {[key: string]: string}): void
 }
 
 /**
