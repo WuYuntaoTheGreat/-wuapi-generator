@@ -157,7 +157,7 @@ class JavaProcessor extends ProjectProcessor {
         case "TList"        : return `public List<${memberTypeName((f.type as $TList))}> ${name} = new LinkedList<>();`
         case "TEnum"        : {
           let fe = f.type as $TEnum
-          return `public ${fe.enu.name} ${name} = ${fe.enu.name}.${fe.enu.asEnumOf(self.project)!.first()};`
+          return `public ${fe.enu.name} ${name} = ${fe.enu.name}.${fe.enu.asEnumOf(self.project)!.firstName()};`
         }
         default: throw Error(`Type "${f.type.type}" of Field "${name}" in "${pth.module}/${pth.name}" is invalid.`)
       }
@@ -223,7 +223,7 @@ class JavaProcessor extends ProjectProcessor {
           b.bra(`public ${prefix} class ${pth.name}${suffix} extends ${pname}${extSuf}`).add((b) => {
             if(!entity.isAbstract) {
               b(dedent`
-                Override
+                @Override
                 public String obtainPath() {
                   return "${entity.path}";
                 }
@@ -235,7 +235,7 @@ class JavaProcessor extends ProjectProcessor {
 
                 @Override
                 public Class<? extends ${resName}> obtainResClass() {
-                    return $resName.class;
+                    return ${resName}.class;
                 }
               `)
             }
@@ -304,7 +304,7 @@ class JavaProcessor extends ProjectProcessor {
 
       b(dedent`
           ;
-          
+
           private int value;
           private ${pth.name}(int value) {
               this.value = value;
@@ -337,14 +337,11 @@ class JavaProcessor extends ProjectProcessor {
           public abstract String obtainPath();
           public abstract String obtainMethod();
           public abstract Class<? extends R> obtainResClass();
-          public abstract Hashtable<String, String> obtainExtra();
       }
     `)
 
     this.writeJavaFile("AbsRes", dedent`
       public abstract class AbsRes {
-          public abstract int obtainSuccessCode();
-          public abstract Hashtable<String, String> obtainExtra();
       }
     `)
 
@@ -356,5 +353,5 @@ class JavaProcessor extends ProjectProcessor {
       this.writeEnum(path, enu)
     })
   }
-
 }
+
