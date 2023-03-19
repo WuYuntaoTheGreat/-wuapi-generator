@@ -20,12 +20,23 @@ export default class JavaPlugin extends BasePlugin {
       abbreviation: "j",
       version: "1.0.0",
       description: "Generate Java code.",
-      arguments: [],
+      arguments: [
+        {
+          tag: "getter",
+          withValue: false,
+          description: "Generate getter/setters of properties",
+        },
+        {
+          tag: "spring",
+          withValue: false,
+          description: "Generate spring boot style Entity",
+        },
+      ],
     }
   }
 
   process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
-    new JavaProcessor(this, project, outputDir).process()
+    new JavaProcessor(this, project, outputDir, args).process()
   }
 }
 
@@ -34,9 +45,16 @@ export default class JavaPlugin extends BasePlugin {
  */
 class JavaProcessor extends ProjectProcessor {
   readonly packageDir: string
+  get useGetter() { return this.config['getter'] != undefined }
+  get useSpring() { return this.config['spring'] != undefined }
 
-  constructor(plugin: BasePlugin, project: $Project, outputDir: string) {
-    super(plugin, project, outputDir)
+  constructor(
+    plugin: BasePlugin,
+    project: $Project,
+    outputDir: string,
+    config: {[key: string]: string},
+  ) {
+    super(plugin, project, outputDir, config)
     this.packageDir = _.concat([ this.rootDir ], this.project.targetPackage.split('.')).join(path.sep)
   }
 
@@ -46,15 +64,16 @@ class JavaProcessor extends ProjectProcessor {
    * @param text The content of the file
    */
   writeJavaFile(name: string, text: string){
-    // TODO: ignoring module, all files in the same package.
     const filePath = this.packageDir + path.sep + name + ".java"
-
     const file = fs.openSync(filePath, 'w')
+
     fs.writeFileSync(file, dedent`
       package ${this.project.targetPackage};
       import java.util.*;
+      ${this.useSpring ? "import jakarta.persistence.*;": ""}
 
-    `+ text)
+    `
+    + text)
   }
 
   /**
@@ -64,26 +83,6 @@ class JavaProcessor extends ProjectProcessor {
    */
   writeEntity(pth: $ElementPath, entity: $Entity) {
     const self = this
-
-    //
-    function memberTypeName(type: $TList): string {
-      switch(type.member.type) {
-        case "TBoolean"     : return "Boolean"
-        case "TInteger"     : return "Integer"
-        case "TLong"        : return "Long"
-        case "TID"          : return "Long"
-        case "TDouble"      : return "Double"
-        case "TString"      : return "String"
-        case "TURL"         : return "String"
-        case "TDateTime"    : return "String"
-        case "TSSMap"       : return "HashMap<String, String>"
-        case "TEnum"        : return (type.member as $TEnum).enu.name!
-        case "TObject"      : return (type.member as $TObject).entity.name!
-        case "TUnknown"     : return (type.member as $TUnknown).unknown
-        case "TList"        : throw Error("List can not contain list!")
-        default : throw new Error(`Unknown list type "${type.type}" in "${pth.module}/${pth.name}"`)
-      }
-    }
 
     //
     function genericTypeName(type: $FieldType): string {
@@ -100,69 +99,62 @@ class JavaProcessor extends ProjectProcessor {
         case "TEnum"        : return (type as $TEnum).enu.name!
         case "TObject"      : return (type as $TObject).entity.name!
         case "TUnknown"     : return (type as $TUnknown).unknown
-        case "TList"        : return memberTypeName(type as $TList)
+        //case "TList"        : return memberTypeName(type as $TList)
+        case "TList"        : return `List<${genericTypeName((type as $TList).member)}>`
         default : throw new Error(`Unknown generic type "${type.type}" in "${pth.module}/${pth.name}"`)
       }
     }
 
     //
     function generateFixedValue(name: string, f: $Field): string {
+      let value = ""
+      const prefix = self.useGetter ? "private" : "public"
       switch(f.type.type) {
-        case "TBoolean"     : return `public final boolean ${name} = ${f.fixedValue as boolean};`
-        case "TInteger"     : return `public final int ${name} = ${f.fixedValue as number};`
-        case "TLong"        : return `public final long ${name} = ${f.fixedValue as number}L;`
-        case "TID"          : return `public final long ${name} = ${f.fixedValue as number}L;`
-        case "TDouble"      : return `public final double ${name} = ${f.fixedValue as number};`
-        case "TString"      : return `public final String ${name} = "${f.fixedValue as string}";`
-        case "TURL"         : return `public final String ${name} = "${f.fixedValue as string}";`
-        case "TDateTime"    : return `public final String ${name} = "${f.fixedValue as string}";`
+        case "TBoolean"  : value = `${f.fixedValue as boolean}` ; break
+        case "TInteger"  : value = `${f.fixedValue as number}`  ; break
+        case "TLong"     : value = `${f.fixedValue as number}L` ; break
+        case "TID"       : value = `${f.fixedValue as number}L` ; break
+        case "TDouble"   : value = `${f.fixedValue as number}`  ; break
+        case "TString"   : value =`"${f.fixedValue as string}"` ; break
+        case "TURL"      : value =`"${f.fixedValue as string}"` ; break
+        case "TDateTime" : value =`"${f.fixedValue as string}"` ; break
         default: throw Error(`Type "${f.type.type}" of Field "${name}" in "${pth.module}/${pth.name}" can NOT have fixed value!`)
       }
+      return `${prefix} final ${genericTypeName(f.type)} ${name} =  ${value};`
     }
 
     //
     function generateOptionalValue(name: string, f: $Field): string {
-      switch(f.type.type) {
-        case "TBoolean"     : return `public Boolean ${name} = null;`
-        case "TInteger"     : return `public Integer ${name} = null;`
-        case "TLong"        : return `public Long ${name} = null;`
-        case "TID"          : return `public Long ${name} = null;`
-        case "TDouble"      : return `public Double ${name} = null;`
-        case "TString"      : return `public String ${name} = null;`
-        case "TURL"         : return `public String ${name} = null;`
-        case "TDateTime"    : return `public String ${name} = null;`
-        case "TSSMap"       : return `public HashMap<String, String> ${name} = null;`
-        case "TEnum"        : return `public ${(f.type as $TEnum).enu.name} ${name} = null;`
-        case "TObject"      : return `public ${(f.type as $TObject).entity.name} ${name} = null;`
-        case "TUnknown"     : return `public ${(f.type as $TUnknown).unknown} ${name} = null;`
-        case "TList"        : return `public List<${memberTypeName((f.type as $TList))}> ${name} = null;`
-        default: throw Error(`Type "${f.type.type}" of Field "${name}" in "${pth.module}/${pth.name}" is invalid.`)
-      }
+      const prefix = self.useGetter ? "private" : "public"
+      return `${prefix} ${genericTypeName(f.type)} ${name} = null;`
     }
 
     //
     function generateDefaultValue(name: string, f: $Field): string {
+      let value =""
+      const prefix = self.useGetter ? "private" : "public"
       switch(f.type.type) {
-        case "TBoolean"     : return `public boolean ${name};`
-        case "TInteger"     : return `public int ${name};`
-        case "TLong"        : return `public long ${name};`
-        case "TID"          : return `public long ${name};`
-        case "TDouble"      : return `public double ${name};`
-        case "TString"      : return `public String ${name} = \"\";`
-        case "TURL"         : return `public String ${name} = \"\";`
-        case "TDateTime"    : return `public String ${name} = \"\";`
-        case "TSSMap"       : return `public HashMap<String, String> ${name} = new HashMap<>();`
-        case "TObject"      : return `public ${(f.type as $TObject).entity.name} ${name} = null;`
-        case "TUnknown"     : return `public ${(f.type as $TUnknown).unknown} ${name} = null;`
-        case "TList"        : return `public List<${memberTypeName((f.type as $TList))}> ${name} = new LinkedList<>();`
+        case "TBoolean"     : value = ""                     ; break
+        case "TInteger"     : value = ""                     ; break
+        case "TLong"        : value = ""                     ; break
+        case "TID"          : value = ""                     ; break
+        case "TDouble"      : value = ""                     ; break
+        case "TString"      : value = "= \"\""               ; break
+        case "TURL"         : value = "= \"\""               ; break
+        case "TDateTime"    : value = "= \"\""               ; break
+        case "TSSMap"       : value = "= new HashMap<>()"    ; break
+        case "TObject"      : value = "= null"               ; break
+        case "TUnknown"     : value = "= null"               ; break
+        case "TList"        : value = "= new LinkedList<>()" ; break
         case "TEnum"        : {
           let fe = f.type as $TEnum
-          return `public ${fe.enu.name} ${name} = ${fe.enu.name}.${fe.enu.asEnumOf(self.project)!.firstName()};`
+          value = `= ${fe.enu.name}.${fe.enu.asEnumOf(self.project)!.firstName()}`
+          break
         }
         default: throw Error(`Type "${f.type.type}" of Field "${name}" in "${pth.module}/${pth.name}" is invalid.`)
       }
+      return `${prefix} ${genericTypeName(f.type)} ${name} ${value};`
     }
-
 
     //
     function calcSuffix(extra?: string): string {
@@ -204,6 +196,16 @@ class JavaProcessor extends ProjectProcessor {
       }
     }
 
+    //
+    function generateGetterSetter(b: BraceCaller, name: string, f: $Field){
+      const _name = name.substring(0, 1).toUpperCase() + ((name.length > 1) ? name.substring(1) : "")
+      b.bra(`public ${genericTypeName(f.type)} get${_name}()`).add((b) => {
+        b(`return ${name};`)
+      })
+      b.bra(`public void set${_name}(${genericTypeName(f.type)} value)`).add((b) => {
+        b(`${name} = value;`)
+      })
+    }
 
     this.writeJavaFile(pth.name!, flatBra("").add((b) => {
       // b(toBlockComment(entity))
@@ -219,6 +221,10 @@ class JavaProcessor extends ProjectProcessor {
           let pname = entity.parent?.name ?? "AbsReq"
           let suffix = calcSuffix((entity.isAbstract) ? "R extends AbsRes" : undefined)
           let extSuf = calcExtSuffix((entity.isAbstract) ? "R" : (resName ?? undefined))
+
+          if(this.useSpring){
+            b("@Entity")
+          }
 
           b.bra(`public ${prefix} class ${pth.name}${suffix} extends ${pname}${extSuf}`).add((b) => {
             if(!entity.isAbstract) {
@@ -241,8 +247,14 @@ class JavaProcessor extends ProjectProcessor {
             }
             //
             _.forIn(entity.fieldsLocal, (f, name) => {
-                generateField(b, name, f)
+              generateField(b, name, f)
             })
+            b("")
+            if(this.useGetter){
+              _.forIn(entity.fieldsLocal, (f, name) => {
+                generateGetterSetter(b, name, f)
+              })
+            }
           })
 
           break
@@ -258,8 +270,14 @@ class JavaProcessor extends ProjectProcessor {
           b.bra(`public ${prefix} class ${pth.name}${suffix} extends ${pname}${extSuf}`).add((b) => {
             //
             _.forIn(entity.fieldsLocal, (f, name) => {
-                generateField(b, name, f)
+              generateField(b, name, f)
             })
+            b("")
+            if(this.useGetter){
+              _.forIn(entity.fieldsLocal, (f, name) => {
+                generateGetterSetter(b, name, f)
+              })
+            }
           })
 
           break
@@ -276,8 +294,14 @@ class JavaProcessor extends ProjectProcessor {
           b.bra(`public ${prefix} class ${pth.name}${suffix} ${extendString}${extSuf}`).add((b) => {
             //
             _.forIn(entity.fieldsLocal, (f, name) => {
-                generateField(b, name, f)
+              generateField(b, name, f)
             })
+            b("")
+            if(this.useGetter){
+              _.forIn(entity.fieldsLocal, (f, name) => {
+                generateGetterSetter(b, name, f)
+              })
+            }
           })
 
           break

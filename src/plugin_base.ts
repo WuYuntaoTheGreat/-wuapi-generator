@@ -50,24 +50,26 @@ export abstract class BasePlugin {
 export abstract class ProjectProcessor {
 
   readonly rootDir: string
+  readonly config: {[key: string]: string}
 
   /**
    * 
    * @param plugin The parent plugin.
    * @param project The project
    * @param outputDir The output dir, for All plugins.
+   * @param config The configuration of this plugin.
    */
   constructor(
     public plugin: BasePlugin,
     public project: $Project,
-    outputDir: string) {
-
+    outputDir: string,
+    config: {[key: string]: string},
+  ) {
+    this.config = config
     this.rootDir = [outputDir, plugin.getDescription().name].join(path.sep)
   }
 
   abstract process(): void
-
-
 }
 
 export function toBlockComment(element: $Commentable | null | undefined): string {
@@ -85,3 +87,4 @@ export function toLineComment(element: $Commentable | null | undefined): string 
     return ""
   }
 }
+

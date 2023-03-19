@@ -25,7 +25,7 @@ export default class SwiftPlugin extends BasePlugin {
   }
 
   process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
-    new SwiftProcessor(this, project, outputDir).process()
+    new SwiftProcessor(this, project, outputDir, args).process()
   }
 }
 

@@ -22,7 +22,7 @@ export default class RepositoryPlugin extends BasePlugin {
   }
 
   process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
-    new RepositoryProcessor(this, project, outputDir).process()
+    new RepositoryProcessor(this, project, outputDir, args).process()
   }
 
 }
