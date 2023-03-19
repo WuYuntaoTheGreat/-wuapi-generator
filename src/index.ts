@@ -1,6 +1,7 @@
 import JavaPlugin from "./plugin_java"
 import SwiftPlugin from "./plugin_swift"
 import RepositoryPlugin from "./plugin_repository"
+import GradlePlugin from "./plugin_gradle"
 import { BasePlugin, PluginDescription, PluginArgument, } from "./plugin_base"
 
 export {
@@ -8,6 +9,7 @@ export {
   PluginDescription,
   PluginArgument,
   JavaPlugin,
+  GradlePlugin,
   SwiftPlugin,
   RepositoryPlugin,
 }
