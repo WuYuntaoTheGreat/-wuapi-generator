@@ -8,4 +8,4 @@
  */
 
 rootProject.name = '{{project_name}}'
-include('lib')
+include('library')

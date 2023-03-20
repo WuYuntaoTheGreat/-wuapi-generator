@@ -22,7 +22,7 @@ export default class GradlePlugin extends BasePlugin {
     const srcDir = [__dirname, "..", "template", this.getName()].join(path.sep)
     const dstDir = [outputDir, this.getName()].join(path.sep)
 
-    const javaDir = [outputDir, this.getName(), "lib", "src", "main"].join(path.sep)
+    const javaDir = [outputDir, this.getName(), "library", "src", "main"].join(path.sep)
 
     ncp(srcDir, dstDir, (error) => {
       if(error) {
@@ -38,8 +38,8 @@ export default class GradlePlugin extends BasePlugin {
           [dstDir, "settings.gradle"].join(path.sep),
           map)
         this.rewriteFile(
-          [srcDir, "lib", "build.gradle"].join(path.sep),
-          [dstDir, "lib", "build.gradle"].join(path.sep),
+          [srcDir, "library", "build.gradle"].join(path.sep),
+          [dstDir, "library", "build.gradle"].join(path.sep),
           map)
         this.javaPlugin.process(project, javaDir, args)
       }
