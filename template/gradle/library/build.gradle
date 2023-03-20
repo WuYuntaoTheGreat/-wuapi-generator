@@ -41,7 +41,7 @@ tasks.named('test') {
 
 publishing {
     publications {
-        {{project_name}}(MavenPublication) {
+        myLibrary(MavenPublication) {
             artifactId = "{{project_name}}"
             from components.java
         }
