@@ -1,6 +1,7 @@
 import { $Commentable, $Project } from "@wuapi/essential";
 import _, { replace } from 'lodash';
 import path from 'path';
+import fs from 'fs'
 
 export type PluginArgument = {
   tag: string,
@@ -42,6 +43,20 @@ export abstract class BasePlugin {
    * @param args The arguments from command line.
    */
   abstract process(project: $Project, outputDir: string, args: {[key: string]: string}): void
+
+  /**
+   * Rewrite a file with texts replaced.
+   * @param src The source file path.
+   * @param dst The destination file path.
+   * @param map The map of texts to replace.
+   */
+  rewriteFile(src: string, dst: string, map: {[key: string]: string}): void {
+    let content = fs.readFileSync(src).toString()
+    for(let key in map){
+      content = content.replace(key, map[key])
+    }
+    fs.writeFileSync(dst, content)
+  }
 }
 
 /**
@@ -66,9 +81,12 @@ export abstract class ProjectProcessor {
     config: {[key: string]: string},
   ) {
     this.config = config
-    this.rootDir = [outputDir, plugin.getDescription().name].join(path.sep)
+    this.rootDir = [outputDir, plugin.getName()].join(path.sep)
   }
 
+  /*
+   *
+   */
   abstract process(): void
 }
 

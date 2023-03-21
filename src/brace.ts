@@ -122,3 +122,13 @@ export function flatBra(prefix: string): Brace {
   brace.type = "flat"
   return brace
 }
+
+export function capitalFirst(str: string): string {
+  return str.substring(0, 1).toUpperCase() + ((str.length > 1) ? str.substring(1) : "")
+}
+
+export function camel2dash(str: string){
+  const ret = str.replace(/([A-Z])/g, '-$1').toLowerCase() 
+  console.log(ret)
+}
+
