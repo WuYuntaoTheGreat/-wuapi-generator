@@ -1,8 +1,8 @@
 import { $ElementPath, $Entity, $EntityType, $Enum, $Field, $FieldType, $Project, $TEnum, $TList, $TObject, $TUnknown } from "@wuapi/essential";
 import _ from "lodash";
 import path from "path";
-import { bra, BraceCaller, flatBra } from "./brace";
-import { BasePlugin, PluginDescription, ProjectProcessor, toBlockComment, toLineComment } from "./plugin_base";
+import { BraceCaller, flatBra } from "./brace";
+import { BasePlugin, PluginDescription, ProjectProcessor, } from "./plugin_base";
 import fs from 'fs'
 import dedent from "dedent";
 
@@ -26,11 +26,6 @@ export default class JavaPlugin extends BasePlugin {
           withValue: false,
           description: "Generate getter/setters of properties",
         },
-        {
-          tag: "spring",
-          withValue: false,
-          description: "Generate spring boot style Entity",
-        },
       ],
     }
   }
@@ -46,7 +41,6 @@ export default class JavaPlugin extends BasePlugin {
 class JavaProcessor extends ProjectProcessor {
   readonly packageDir: string
   get useGetter() { return this.config['getter'] != undefined }
-  get useSpring() { return this.config['spring'] != undefined }
 
   constructor(
     plugin: BasePlugin,
@@ -69,11 +63,8 @@ class JavaProcessor extends ProjectProcessor {
 
     fs.writeFileSync(file, dedent`
       package ${this.project.targetPackage};
-      import java.util.*;
-      ${this.useSpring ? "import jakarta.persistence.*;": ""}
-
-    `
-    + text)
+      import java.util.*; `
+    + '\n\n' + text)
   }
 
   /**
@@ -222,21 +213,17 @@ class JavaProcessor extends ProjectProcessor {
           let suffix = calcSuffix((entity.isAbstract) ? "R extends AbsRes" : undefined)
           let extSuf = calcExtSuffix((entity.isAbstract) ? "R" : (resName ?? undefined))
 
-          if(this.useSpring){
-            b("@Entity")
-          }
-
           b.bra(`public ${prefix} class ${pth.name}${suffix} extends ${pname}${extSuf}`).add((b) => {
             if(!entity.isAbstract) {
               b(dedent`
                 @Override
                 public String obtainPath() {
-                  return "${entity.path}";
+                    return "${entity.path}";
                 }
 
                 @Override
                 public String obtainMethod() {
-                    return "${entity.method}";
+                    return ${entity.method ? `"${entity.method}"` : "null" };
                 }
 
                 @Override
@@ -361,13 +348,11 @@ class JavaProcessor extends ProjectProcessor {
           public abstract String obtainPath();
           public abstract String obtainMethod();
           public abstract Class<? extends R> obtainResClass();
-      }
-    `)
+      }`)
 
     this.writeJavaFile("AbsRes", dedent`
       public abstract class AbsRes {
-      }
-    `)
+      }`)
 
     this.project.flatEntities().forEach(({path, entity}) => {
       this.writeEntity(path, entity)

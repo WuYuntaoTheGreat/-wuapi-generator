@@ -6,8 +6,9 @@
  * @returns Intented string
  */
 export function indent(s: string) {
-  const indentSpaces = 4
-  const spaces = Array(indentSpaces).join(" ")
+  //const indentSpaces = 4
+  //const spaces = Array(indentSpaces).join(" ")
+  const spaces = "    "
   return s.replace(/^(?!$)/mg, spaces);
 }
 

@@ -18,8 +18,8 @@ export default class GradlePlugin extends BasePlugin {
         {
           tag: "inc",
           withValue: false,
-          description: "Increamental, NOT copying config files",
-        }
+          description: "Increamental, NOT overriding old files",
+        },
       ]),
     }
   }
