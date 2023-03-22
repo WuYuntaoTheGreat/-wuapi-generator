@@ -5,7 +5,7 @@ import fs from "fs"
 import path from "path"
 import _ from "lodash";
 import JavaPlugin from "./plugin_java";
-import {capitalFirst, flatBra} from "./brace";
+import { flatBra, } from "./brace";
 import ncp from "ncp";
 
 export default class SpringPlugin extends BasePlugin {
@@ -32,6 +32,11 @@ export default class SpringPlugin extends BasePlugin {
           withValue: false,
           description: "Also generate API code",
         },
+        {
+          tag: "interface",
+          withValue: false,
+          description: "Generate interfaces instead of classes",
+        },
       ],
     }
   }
@@ -55,6 +60,10 @@ class SpringProcessor extends ProjectProcessor {
     return this.config["name"]
   }
 
+  get useInterface(): boolean {
+    return this.config["interface"] != undefined
+  }
+
   constructor(
     plugin: BasePlugin,
     project: $Project,
@@ -64,7 +73,8 @@ class SpringProcessor extends ProjectProcessor {
     super(plugin, project, outputDir, config)
 
     this.package = (config["pkg"]) ? config["pkg"] : this.project.targetPackage
-    this.packageDir = _.concat([ this.rootDir, "src", "main", "java" ], this.package.split('.')).join(path.sep)
+    this.packageDir = _.concat(
+      [ this.rootDir, "src", "main", "java" ], this.package.split('.')).join(path.sep)
   }
 
   /**
@@ -85,7 +95,7 @@ class SpringProcessor extends ProjectProcessor {
    * Write the application file
    */
   writeApplication(){
-    const _name = capitalFirst(this.name)
+    const _name = _.capitalize(this.name)
     this.writeJavaFile(this.packageDir, `${_name}Application`, flatBra("").add((b) => {
       b(`package ${this.package};\n`)
 
@@ -106,14 +116,17 @@ class SpringProcessor extends ProjectProcessor {
    */
   writeModule(mName: string){
     const module = this.project.modules[mName]
-    const iname = `I${mName}Resource`
+    const cname = `${this.useInterface ? "I" : ""}${mName}Resource`
     let reqCount = 0
     let moduleContent = flatBra("").add((b) => {
       b(`package ${this.package}.${mName.toLowerCase()};\n`)
       b(`import ${this.project.targetPackage}.*;`)
-      b("import org.springframework.web.bind.annotation.DeleteMapping;")
-      b("")
-      b.bra(`public interface ${iname}`).add((b) =>  {
+      b("import org.springframework.web.bind.annotation.*;\n")
+
+      if(!this.useInterface){
+        b("@RestController")
+      }
+      b.bra(`public ${this.useInterface ? "interface" : "class"} ${cname}`).add((b) =>  {
         for(let eName in module.entities){
           const entity = module.entities[eName]
           if(entity.type != $EntityType.REQUEST){
@@ -139,8 +152,14 @@ class SpringProcessor extends ProjectProcessor {
           }
 
           b(`@${method}Mapping("${entity.path}")`)
-          b(`public ${resp} retrive${resp}(@RequestBody ${eName} req);`)
-          b("")
+          if(this.useInterface){
+            b(`public ${resp} retrive${resp}(@RequestBody ${eName} req);\n`)
+          } else {
+            b.bra(`public ${resp} retrive${resp}(@RequestBody ${eName} req)`).add((b) => {
+              b("// TODO: implement this method")
+              b("return null;")
+            })
+          }
           reqCount++
         }
       })
@@ -148,28 +167,26 @@ class SpringProcessor extends ProjectProcessor {
 
     if(reqCount > 0){
       const dir = this.packageDir + path.sep + mName.toLowerCase()
-      this.writeJavaFile(dir, iname, moduleContent.toString())
+      this.writeJavaFile(dir, cname, moduleContent.toString())
     }
   }
 
   /**
    * Write template.
    */
-writeTemplate(){
+  writeTemplate(){
     const map = {
-      "{{project_name}}"     : this.name,
-      "{{project_version}}"  : this.project.version,
-      "{{project_package}}"  : this.package,
+      "{{project_name}}"          : _.kebabCase(this.name),
+      "{{project_version}}"       : this.project.version,
+      "{{project_package}}"       : this.package,
+      "{{project_description}}"   : "",
     }
-
     const src = [__dirname, "..", "template", "spring", "pom.xml"].join(path.sep)
     const dst = [this.rootDir, "pom.xml"].join(path.sep)
-
     this.plugin.rewriteFile(src, dst, map)
 
     const srcDir = [__dirname, "..", "template", "spring", "src"].join(path.sep)
     const dstDir = [this.rootDir, "src"].join(path.sep)
-
     ncp(srcDir, dstDir, (_) => {})
   }
 

@@ -1,7 +1,7 @@
 import { $ElementPath, $Entity, $EntityType, $Enum, $Field, $FieldType, $Project, $TEnum, $TList, $TObject, $TUnknown } from "@wuapi/essential";
 import _ from "lodash";
 import path from "path";
-import { BraceCaller, capitalFirst, flatBra } from "./brace";
+import { BraceCaller, flatBra } from "./brace";
 import { BasePlugin, PluginDescription, ProjectProcessor, } from "./plugin_base";
 import fs from 'fs'
 import dedent from "dedent";
@@ -189,7 +189,7 @@ class JavaProcessor extends ProjectProcessor {
 
     //
     function generateGetterSetter(b: BraceCaller, name: string, f: $Field){
-      const _name = capitalFirst(name)
+      const _name = _.camelCase(name)
       b.bra(`public ${genericTypeName(f.type)} get${_name}()`).add((b) => {
         b(`return ${name};`)
       })
