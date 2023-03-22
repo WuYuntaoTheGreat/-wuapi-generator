@@ -37,6 +37,11 @@ export default class SpringPlugin extends BasePlugin {
           withValue: false,
           description: "Generate interfaces instead of classes",
         },
+        {
+          tag: "inc",
+          withValue: false,
+          description: "Increamental, NOT overriding config files",
+        },
       ],
     }
   }
