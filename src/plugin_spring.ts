@@ -109,7 +109,7 @@ class SpringProcessor extends ProjectProcessor {
       b("@SpringBootApplication")
       b.bra(`public class ${_name}Application `).add((b) => {
         b.bra("public static void main(String[] args)").add((b) => {
-          b("SpringApplication.run(SpringBoot2RestServiceApplication.class, args);")
+          b(`SpringApplication.run(${_name}Application.class, args);`)
         }) 
       })
     }).toString())
