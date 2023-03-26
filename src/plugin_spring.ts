@@ -1,12 +1,13 @@
-import { $Project, $EntityType, $ReqMethod, } from "@wuapi/essential";
+import { $Project, $EntityType, $ReqMethod, $ElementPath, } from "@wuapi/essential";
 import { BasePlugin, ProjectProcessor } from "./plugin_base";
 import { PluginDescription } from "./plugin_base";
 import fs from "fs"
 import path from "path"
 import _ from "lodash";
 import JavaPlugin from "./plugin_java";
-import { flatBra, } from "./brace";
+import { flatBra, BraceCaller, } from "./brace";
 import ncp from "ncp";
+import DemoGenerator from "./spring/demo_generator";
 
 export default class SpringPlugin extends BasePlugin {
 
@@ -38,6 +39,11 @@ export default class SpringPlugin extends BasePlugin {
           description: "Generate interfaces instead of classes",
         },
         {
+          tag: "demo",
+          withValue: false,
+          description: "Generate demo (fake) data.",
+        },
+        {
           tag: "inc",
           withValue: false,
           description: "Increamental, NOT overriding config files",
@@ -67,6 +73,10 @@ class SpringProcessor extends ProjectProcessor {
 
   get useInterface(): boolean {
     return this.config["interface"] != undefined
+  }
+
+  get useDemo(): boolean {
+    return this.config["demo"] != undefined
   }
 
   constructor(
@@ -116,6 +126,16 @@ class SpringProcessor extends ProjectProcessor {
   }
 
   /**
+   * Write a demo response.
+   * @param b The BraceCaller object to add content to
+   * @param project The $Project where the entity can be find
+   * @param path The $ElementPath of the entity, whose demo will be generated.
+   */
+  writeDemoResponse(b: BraceCaller, project: $Project, path: $ElementPath){
+    new DemoGenerator(project, path).asFunctionBody(b)
+  }
+
+  /**
    * Write a module
    * @param mName The name of the module.
    */
@@ -125,6 +145,8 @@ class SpringProcessor extends ProjectProcessor {
     let reqCount = 0
     let moduleContent = flatBra("").add((b) => {
       b(`package ${this.package}.${mName.toLowerCase()};\n`)
+
+      b("import java.util.*;")
       b(`import ${this.project.targetPackage}.*;`)
       b("import org.springframework.web.bind.annotation.*;\n")
 
@@ -161,8 +183,12 @@ class SpringProcessor extends ProjectProcessor {
             b(`public ${resp} retrive${resp}(@RequestBody ${eName} req);\n`)
           } else {
             b.bra(`public ${resp} retrive${resp}(@RequestBody ${eName} req)`).add((b) => {
-              b("// TODO: implement this method")
-              b("return null;")
+              if(this.useDemo){
+                this.writeDemoResponse(b, this.project, entity.response!)
+              } else {
+                b("// TODO: implement this method")
+                b("return null;")
+              }
             })
           }
           reqCount++
@@ -177,7 +203,9 @@ class SpringProcessor extends ProjectProcessor {
   }
 
   /**
-   * Write template.
+   * Write template. Including:
+   * - pom.xml
+   * - All files under template/spring/src
    */
   writeTemplate(){
     const map = {

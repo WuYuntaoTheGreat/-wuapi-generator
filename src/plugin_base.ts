@@ -53,7 +53,7 @@ export abstract class BasePlugin {
   rewriteFile(src: string, dst: string, map: {[key: string]: string}): void {
     let content = fs.readFileSync(src).toString()
     for(let key in map){
-      content = content.replaceAll(key, map[key])
+      content = content.split(key).join(map[key])
     }
     fs.writeFileSync(dst, content)
   }

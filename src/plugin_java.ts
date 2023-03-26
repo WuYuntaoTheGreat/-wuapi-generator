@@ -85,7 +85,7 @@ class JavaProcessor extends ProjectProcessor {
         case "TDouble"      : return "Double"
         case "TString"      : return "String"
         case "TURL"         : return "String"
-        case "TDateTime"    : return "String"
+        case "TDateTime"    : return "Long"
         case "TSSMap"       : return "HashMap<String, String>"
         case "TEnum"        : return (type as $TEnum).enu.name!
         case "TObject"      : return (type as $TObject).entity.name!
@@ -108,7 +108,7 @@ class JavaProcessor extends ProjectProcessor {
         case "TDouble"   : value = `${f.fixedValue as number}`  ; break
         case "TString"   : value =`"${f.fixedValue as string}"` ; break
         case "TURL"      : value =`"${f.fixedValue as string}"` ; break
-        case "TDateTime" : value =`"${f.fixedValue as string}"` ; break
+        case "TDateTime" : value = `${f.fixedValue as number}`  ; break
         default: throw Error(`Type "${f.type.type}" of Field "${name}" in "${pth.module}/${pth.name}" can NOT have fixed value!`)
       }
       return `${prefix} final ${genericTypeName(f.type)} ${name} =  ${value};`
@@ -132,7 +132,7 @@ class JavaProcessor extends ProjectProcessor {
         case "TDouble"      : value = ""                     ; break
         case "TString"      : value = "= \"\""               ; break
         case "TURL"         : value = "= \"\""               ; break
-        case "TDateTime"    : value = "= \"\""               ; break
+        case "TDateTime"    : value = ""                     ; break
         case "TSSMap"       : value = "= new HashMap<>()"    ; break
         case "TObject"      : value = "= null"               ; break
         case "TUnknown"     : value = "= null"               ; break
