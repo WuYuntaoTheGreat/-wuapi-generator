@@ -188,13 +188,13 @@ export default class DemoGenerator {
             }
           } else {
             for(let i = 0; i < 3; i++){
-              b(`object${idxN}.${key}.add(${this.generateField((f.type as $TList).member, f.demoConfig)});`)
+              b(`object${idxN}.${key}.add(${this.generateField((f.type as $TList).member, f.config)});`)
             }
           }
           break
 
         default:
-          b(`object${idxN}.${key} = ${this.generateField(f.type, f.demoConfig)};`)
+          b(`object${idxN}.${key} = ${this.generateField(f.type, f.config)};`)
           break
       }
     })
