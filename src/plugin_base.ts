@@ -1,5 +1,5 @@
 import { $Commentable, $Project } from "@wuapi/essential";
-import _, { replace } from 'lodash';
+import _ from 'lodash';
 import path from 'path';
 import fs from 'fs'
 

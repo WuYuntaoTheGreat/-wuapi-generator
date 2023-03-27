@@ -1,9 +1,10 @@
 import { $ElementPath, $Entity, $EntityType, $Enum, $Field, $FieldType, $Project, $TEnum, $TList, $TObject, $TUnknown } from "@wuapi/essential";
-import _ from "lodash";
 import path from "path";
+import fs from 'fs'
+import ncp from 'ncp'
+import _ from "lodash";
 import { BraceCaller, flatBra } from "./brace";
 import { BasePlugin, PluginDescription, ProjectProcessor, } from "./plugin_base";
-import fs from 'fs'
 import dedent from "dedent";
 
 /**
@@ -26,11 +27,68 @@ export default class JavaPlugin extends BasePlugin {
           withValue: false,
           description: "Generate getter/setters of properties",
         },
+        {
+          tag: "gradle",
+          withValue: false,
+          description: "Generate gradle project",
+        },
+        {
+          tag: "inc",
+          withValue: false,
+          description: "Increamental, NOT overriding old files (only work with 'gradle' mode)",
+        },
       ],
     }
   }
 
+  /**
+   * Process gradle project.
+   */
+  processGradle(project: $Project, outputDir: string, skip: boolean, next: () => void){
+    if(skip){
+      next()
+      return
+    }
+
+    const srcDir = [__dirname, "..", "template", this.getName()].join(path.sep)
+    const dstDir = [outputDir, this.getName()].join(path.sep)
+
+    ncp(srcDir, dstDir, (error) => {
+      if(error) {
+        return console.error(error)
+      } 
+      const map = {
+        "{{project_name}}"     : project.name,
+        "{{project_version}}"  : project.version,
+        "{{project_package}}"  : project.targetPackage,
+      }
+      this.rewriteFile(
+        [srcDir, "settings.gradle"].join(path.sep),
+        [dstDir, "settings.gradle"].join(path.sep),
+        map)
+      this.rewriteFile(
+        [srcDir, "library", "build.gradle"].join(path.sep),
+        [dstDir, "library", "build.gradle"].join(path.sep),
+        map)
+
+      next()
+    })
+  }
+
+  /**
+   * Start process the project, and generate code.
+   */
   process(project: $Project, outputDir: string, args: {[key: string]: string}): void {
+    if(args["gradle"] != undefined){
+      const javaDir = [outputDir, this.getName(), "library", "src", "main"].join(path.sep)
+      fs.mkdirSync(javaDir, {recursive: true})
+
+      this.processGradle(project, outputDir, args["inc"] != undefined, () => {
+        new JavaPlugin().process(project, javaDir, _.omit(args, ["gradle", "inc"]))
+      })
+      return
+    }
+
     new JavaProcessor(this, project, outputDir, args).process()
   }
 }
