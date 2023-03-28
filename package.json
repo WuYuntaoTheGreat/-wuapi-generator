@@ -1,6 +1,6 @@
 {
   "name": "@wuapi/generator",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "WU API Generator",
   "main": "lib/index.js",
   "scripts": {

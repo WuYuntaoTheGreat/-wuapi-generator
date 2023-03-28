@@ -180,9 +180,9 @@ class SpringProcessor extends ProjectProcessor {
 
           b(`@${method}Mapping("${entity.path}")`)
           if(this.useInterface){
-            b(`public ${resp} retrive${resp}(@RequestBody ${eName} req);\n`)
+            b(`public ${resp} do${eName}(@RequestBody ${eName} req);\n`)
           } else {
-            b.bra(`public ${resp} retrive${resp}(@RequestBody ${eName} req)`).add((b) => {
+            b.bra(`public ${resp} do${eName}(@RequestBody ${eName} req)`).add((b) => {
               if(this.useDemo){
                 this.writeDemoResponse(b, this.project, entity.response!)
               } else {
